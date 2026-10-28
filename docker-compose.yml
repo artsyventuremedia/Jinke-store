@@ -1,0 +1,33 @@
+# Store + Caddy (automatic HTTPS from Let's Encrypt).
+# 1. Point your domain's DNS (A record) to this server.
+# 2. cp .env.example .env and fill it in (DOMAIN, PUBLIC_URL, ADMIN_EMAIL, ADMIN_PASSWORD).
+# 3. docker compose up -d --build
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    volumes:
+      - ./data:/app/data   # database, uploaded photos and daily backups
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

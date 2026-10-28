@@ -1,0 +1,21 @@
+# Render Blueprint: New → Blueprint → connect the repository. Render reads this file.
+# A persistent disk needs a paid instance type (Starter or above).
+services:
+  - type: web
+    name: jinke-store
+    runtime: docker
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: jinke-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_EMAIL
+        value: jinke.wear@gmail.com
+      - key: ADMIN_PASSWORD
+        sync: false   # Render asks you for this on first deploy
+      - key: PUBLIC_URL
+        sync: false   # e.g. https://jinke-store.onrender.com, later your own domain
