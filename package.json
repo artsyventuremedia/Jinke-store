@@ -1,0 +1,23 @@
+{
+  "name": "jinke-store",
+  "version": "1.0.0",
+  "description": "E-commerce portal with storefront and admin dashboard",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --no-warnings --env-file-if-exists=.env server.js",
+    "dev": "node --no-warnings --env-file-if-exists=.env --watch server.js",
+    "seed": "node --no-warnings --env-file-if-exists=.env lib/seed.js --reset",
+    "reset:empty": "node --no-warnings --env-file-if-exists=.env lib/seed.js --empty",
+    "admin": "node --no-warnings --env-file-if-exists=.env scripts/admin.js",
+    "backup": "node --no-warnings --env-file-if-exists=.env -e \"const b=require('./lib/backup');console.log(b.backupNow()||'Today\\'s backup already exists in '+b.BACKUP_DIR)\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.10.1"
+  }
+}
