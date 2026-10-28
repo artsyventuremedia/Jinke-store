@@ -1,7 +1,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const { db, migrate, UPLOADS_DIR, ON_VERCEL } = require('./lib/db');
+const { db, migrate, UPLOADS_DIR, ON_VERCEL, CONFIG_PROBLEMS } = require('./lib/db');
 const { loadUser } = require('./lib/auth');
 const { seedIfEmpty } = require('./lib/seed');
 const { seedPages } = require('./lib/pages');
@@ -40,8 +40,44 @@ app.use((req, _res, next) => {
   next();
 });
 app.get('/favicon.ico', (_req, res) => res.redirect(301, '/assets/brand/favicon-32.png'));
-app.use(async (_req, _res, next) => { await ready(); next(); });
-app.get('/healthz', async (_req, res) => { await db.get('SELECT 1 AS ok'); res.json({ ok: true }); });
+
+// If the store can't start (setup incomplete, database unreachable), say why instead of crashing.
+// Tokens and URLs are never included — only which setting is missing or what the database replied.
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeMessage = (err) => String(err?.message || err).replace(/(libsql|https?|wss?):\/\/\S+/gi, '[database address]').replace(/ey[\w-]{20,}\.[\w-]+\.[\w-]+/g, '[token]').slice(0, 300);
+function setupPage(res, problems) {
+  res.status(503).set('Cache-Control', 'no-store').type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Store setup needed — Jinke</title><meta name="robots" content="noindex"><link rel="icon" href="/assets/brand/favicon-32.png">
+<style>body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;background:#f7f4ee;color:#161616;margin:0;padding:40px 16px}
+main{max-width:640px;margin:0 auto;background:#fff;border-radius:16px;padding:28px;box-shadow:0 8px 30px rgba(0,0,0,.06)}img{height:44px}h1{font-size:22px;margin:18px 0 8px}
+li{margin:10px 0}code{background:#f3efe7;padding:1px 6px;border-radius:5px}.muted{color:#6b6a66;font-size:14px}</style></head>
+<body><main><img src="/assets/brand/logo.png" alt="ಜಿಂಕೆ"><h1>The store is almost ready</h1>
+<p>It can't open its database yet. Fix the following in your Vercel project, then redeploy:</p>
+<ul>${problems.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+<p class="muted">Full steps: README → “Option V: Vercel”. This page disappears as soon as the database works.</p></main></body></html>`);
+}
+app.get('/healthz', async (_req, res) => {
+  if (CONFIG_PROBLEMS.length) return res.status(503).json({ ok: false, problems: CONFIG_PROBLEMS });
+  try {
+    await ready();
+    await db.get('SELECT 1 AS ok');
+    res.json({ ok: true, database: process.env.TURSO_DATABASE_URL ? 'turso' : 'file', uploads: process.env.BLOB_READ_WRITE_TOKEN ? 'vercel-blob' : 'disk' });
+  } catch (err) {
+    res.status(503).json({ ok: false, problems: [`Database error: ${safeMessage(err)}`] });
+  }
+});
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/assets/')) return next(); // let the setup page load its logo
+  if (CONFIG_PROBLEMS.length) return req.path.startsWith('/api/') ? res.status(503).json({ error: CONFIG_PROBLEMS.join(' ') }) : setupPage(res, CONFIG_PROBLEMS);
+  try {
+    await ready();
+  } catch (err) {
+    console.error('Start-up failed:', err);
+    const problem = `The database could not be opened: ${safeMessage(err)}. Check that TURSO_DATABASE_URL and TURSO_AUTH_TOKEN belong to the same database.`;
+    return req.path.startsWith('/api/') ? res.status(503).json({ error: problem }) : setupPage(res, [problem]);
+  }
+  next();
+});
 
 // Vercel Cron calls this with "Authorization: Bearer <CRON_SECRET>" (see vercel.json).
 app.get('/api/cron/jobs', async (req, res) => {
