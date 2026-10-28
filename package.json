@@ -10,14 +10,17 @@
     "seed": "node --no-warnings --env-file-if-exists=.env lib/seed.js --reset",
     "reset:empty": "node --no-warnings --env-file-if-exists=.env lib/seed.js --empty",
     "admin": "node --no-warnings --env-file-if-exists=.env scripts/admin.js",
-    "backup": "node --no-warnings --env-file-if-exists=.env -e \"const b=require('./lib/backup');console.log(b.backupNow()||'Today\\'s backup already exists in '+b.BACKUP_DIR)\""
+    "backup": "node --no-warnings --env-file-if-exists=.env -e \"const b=require('./lib/backup');b.backupNow().then((f)=>console.log(f||'Today\\'s backup already exists in '+b.BACKUP_DIR))\""
   },
   "engines": {
     "node": ">=22.13"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "multer": "^1.4.5-lts.1",
+    "@libsql/client": "^0.15.15",
+    "@vercel/blob": "^1.1.1",
+    "@vercel/functions": "^2.2.13",
+    "express": "^5.3.0",
+    "multer": "^2.5.0",
     "nodemailer": "^6.10.1"
   }
 }

@@ -37,7 +37,30 @@ Every fresh install loads the Jinke catalogue: categories, collections, banners,
 
 ## Deploy
 
-> **Not Vercel (or Netlify).** This store is a normal Node.js server that keeps its database, uploaded photos and backups on disk, and runs background jobs. Vercel only runs short-lived functions on a read-only disk, so the store can't start there ("This page is unavailable"), and orders would be lost anyway. Use one of the options below; each gives the store a disk that survives restarts.
+### Option V: Vercel (with Turso + Vercel Blob)
+Vercel runs the store as a serverless function with no disk, so the store keeps its data in two online services instead:
+- **Turso** (an online SQLite database) holds orders, products, customers and settings.
+- **Vercel Blob** holds the photos you upload in the admin. The launch photos are part of the code in `public/assets/products/`.
+
+1. **Database:** create a Turso database. The easiest way is in Vercel: open the project, go to **Storage → Create Database → Turso**, pick the **Mumbai (ap-south-1)** region, and connect it to the project. This sets `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` for you.
+   You can also sign up at turso.tech, create a database in Mumbai, and copy its URL (`libsql://…`) and a token into the environment variables yourself.
+2. **Photos:** in Vercel, go to **Storage → Create → Blob** and connect it to the project. This sets `BLOB_READ_WRITE_TOKEN`.
+3. **Environment variables:** under **Settings → Environment Variables**, add:
+   - `ADMIN_EMAIL` = jinke.wear@gmail.com
+   - `ADMIN_PASSWORD` = your admin password
+   - `PUBLIC_URL` = https://your-project.vercel.app (later your own domain)
+   - `CRON_SECRET` = any long random text. It protects the daily background job.
+4. **Deploy:** go to **Deployments → Redeploy**, or push to GitHub. On the first visit the store creates its tables and loads the Jinke catalogue.
+5. Open `/admin` and log in.
+
+Notes:
+- **Plan:** Vercel's free Hobby plan is for non-commercial use only. A store selling products needs **Vercel Pro**.
+- **Background jobs:** `vercel.json` runs the background job (releasing unpaid online orders, courier tracking) once a day, the most the Hobby plan allows. It also runs whenever you open the admin dashboard. On Pro you can make it more frequent, e.g. `*/10 * * * *`.
+- **Region:** the function runs in Mumbai (`bom1`, set in `vercel.json`). Keep the Turso database in the same region so pages load quickly.
+- **Uploads:** photo uploads are limited to 4 MB each, because Vercel caps a request at 4.5 MB.
+- **If something goes wrong:** look at **Vercel → the deployment → Logs**. If `TURSO_DATABASE_URL` is missing, the log says so in plain words.
+
+> The same code also runs on an ordinary server with a local database file. The options below need no Turso or Blob.
 
 Everything the store saves lives in **one folder, `/app/data`** (database, photos you upload, daily backups). Whichever host you use, attach a persistent disk there.
 

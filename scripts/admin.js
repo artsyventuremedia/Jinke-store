@@ -12,12 +12,15 @@ if (password.length < 8) {
   console.error('Password must be at least 8 characters.');
   process.exit(1);
 }
-const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-if (existing) {
-  db.prepare("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?").run(hashPassword(password), existing.id);
-  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(existing.id);
-  console.log(`Updated ${email}: password reset and admin access granted.`);
-} else {
-  db.prepare("INSERT INTO users(name, email, password_hash, role) VALUES(?, ?, ?, 'admin')").run(name, email, hashPassword(password));
-  console.log(`Created admin ${email}.`);
-}
+(async () => {
+  await require('../lib/db').migrate();
+  const existing = (await db.get('SELECT id FROM users WHERE email = ?', email));
+  if (existing) {
+    (await db.run("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?", hashPassword(password), existing.id));
+    (await db.run('DELETE FROM sessions WHERE user_id = ?', existing.id));
+    console.log(`Updated ${email}: password reset and admin access granted.`);
+  } else {
+    (await db.run("INSERT INTO users(name, email, password_hash, role) VALUES(?, ?, ?, 'admin')", name, email, hashPassword(password)));
+    console.log(`Created admin ${email}.`);
+  }
+})().catch((err) => { console.error(err.message); process.exit(1); });

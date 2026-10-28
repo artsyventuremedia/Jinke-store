@@ -6,5 +6,5 @@
 | `ka-mysuru-dasara-tee-her.jpg` | Unsplash, photo-1546915808-49b85ea75b62 (unsplash.com/photos/McVKQwiC5E4), Unsplash License | **Mockup**: Jinke ಕ Dasara artwork digitally placed on a plain black tee. Cropped below the chin. |
 | All other photos | Jinke's own product photos | |
 
-Replace the two mockups with photos from your own shoot when you have them (Admin → Products and Admin → Banners).
+The photos themselves are in `public/assets/products/`. Replace the two mockups with photos from your own shoot when you have them (Admin → Products and Admin → Banners).
 The Unsplash License allows free commercial use and editing. It does not cover implying that the people shown endorse a product, which is why their faces are cropped out.
