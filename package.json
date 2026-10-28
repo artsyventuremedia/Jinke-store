@@ -13,7 +13,7 @@
     "backup": "node --no-warnings --env-file-if-exists=.env -e \"const b=require('./lib/backup');b.backupNow().then((f)=>console.log(f||'Today\\'s backup already exists in '+b.BACKUP_DIR))\""
   },
   "engines": {
-    "node": ">=22.13"
+    "node": "24.x"
   },
   "dependencies": {
     "@libsql/client": "^0.15.15",
