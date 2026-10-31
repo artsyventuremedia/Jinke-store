@@ -49,7 +49,7 @@ async function checkoutParams(o) {
   };
 }
 
-const PUBLIC_SETTINGS = ['store_name', 'tagline', 'announcement', 'phone', 'whatsapp', 'email', 'address',
+const PUBLIC_SETTINGS = ['store_name', 'tagline', 'announcement', 'nav_menu', 'phone', 'whatsapp', 'email', 'address',
   'shipping_fee', 'free_shipping_above', 'cod_enabled', 'online_enabled', 'instagram', 'facebook', 'youtube', 'logo', 'bulk_min_qty', 'gstin', 'business_name'];
 
 router.get('/store', async (_req, res) => {

@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { db, migrate, UPLOADS_DIR, ON_VERCEL, CONFIG_PROBLEMS } = require('./lib/db');
 const { loadUser } = require('./lib/auth');
-const { seedIfEmpty } = require('./lib/seed');
+const { seedIfEmpty, updateContent } = require('./lib/seed');
 const { seedPages } = require('./lib/pages');
 const { getOrder } = require('./lib/shop');
 const { sameOrigin, securityHeaders } = require('./lib/security');
@@ -19,6 +19,7 @@ function ready() {
   starting ||= (async () => {
     await migrate();
     await seedIfEmpty();
+    await updateContent();
     await seedPages();
   })().catch((err) => { starting = null; throw err; });
   return starting;

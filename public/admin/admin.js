@@ -626,8 +626,8 @@
     banners: {
       title: 'Home banners', singular: 'banner',
       fields: [{ name: 'kicker', label: 'Small line above the headline', hint: 'e.g. ನವೆಂಬರ್ 1 · Kannada Rajyotsava' }, { name: 'title', label: 'Headline', required: true }, { name: 'subtitle', label: 'Text' },
-        { name: 'theme', label: 'Colour theme', type: 'select', options: [['light', 'Light (cream)'], ['karnataka', 'Karnataka (yellow & red)'], ['dark', 'Dark']] },
-        { name: 'image', label: 'Photo 1', type: 'image', hint: 'Portrait photos (3:4) look best, e.g. 1200 × 1600' }, { name: 'image_label', label: 'Photo 1 label', hint: 'Optional, e.g. For him' },
+        { name: 'theme', label: 'Style', type: 'select', options: [['light', 'Light (cream)'], ['karnataka', 'Karnataka (yellow & red)'], ['dark', 'Dark'], ['image', 'Full-width picture (words are in the picture)']] },
+        { name: 'image', label: 'Photo 1', type: 'image', hint: 'Portrait photos (3:4) look best, e.g. 1200 × 1600. For a full-width picture use a wide 2:1 image, e.g. 1600 × 800 — the headline becomes its alt text and the whole banner links to the button link.' }, { name: 'image_label', label: 'Photo 1 label', hint: 'Optional, e.g. For him' },
         { name: 'image2', label: 'Photo 2 (optional)', type: 'image', hint: 'Add a second photo to show two side by side, e.g. him and her' }, { name: 'image2_label', label: 'Photo 2 label', hint: 'Optional, e.g. For her' },
         { name: 'link', label: 'Button link', hint: 'e.g. /shop?category=hoodies' }, { name: 'button_text', label: 'Button text' },
         { name: 'sort', label: 'Sort order', type: 'number' }, { name: 'active', label: 'Show on home page', type: 'bool', default: true }],
@@ -897,6 +897,8 @@
     view.innerHTML = `<div class="page-title"><h1>Settings</h1></div>
       <div class="edit-layout"><form id="sf"><div class="card"><h2 style="margin-bottom:14px">Store</h2>
           ${f('store_name', 'Store name')}${f('tagline', 'Tagline', 'Shown in the footer and in Google search results')}${f('announcement', 'Announcement bar', 'Leave empty to hide the bar')}
+          <div class="field"><label for="s-nav_menu">Header menu</label><textarea class="input" id="s-nav_menu" name="nav_menu" rows="8" style="font-family:ui-monospace,monospace;font-size:13px">${esc(s.nav_menu)}</textarea>
+            <span class="hint">One item per line, as <b>Label | link</b> — e.g. <code>Tote Bags | /shop?category=tote-bags</code> or <code>Rajyotsava Special | /shop?collection=rajyotsava-special</code>. A category with sub-categories opens a dropdown. Leave empty to list your top-level categories.</span></div>
           <div class="field"><label for="s-logo">Logo</label><div style="display:flex;gap:10px;align-items:center">
             <img class="thumb" id="logo-prev" src="${esc(s.logo)}" alt="" style="width:auto;max-width:120px;${s.logo ? '' : 'visibility:hidden'}">
             <input class="input" id="s-logo" name="logo" value="${esc(s.logo)}" placeholder="Leave empty to show the store name">

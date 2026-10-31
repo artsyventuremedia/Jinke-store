@@ -311,31 +311,52 @@
     return path;
   }
 
-  // Header menu: Home, one dropdown per top-level category (sub-categories nest one level), Bulk Order.
+  // Header menu, from the nav_menu setting: one "Label | link" per line (Admin → Settings).
+  // A link to a category that has sub-categories opens a dropdown of them.
+  function menuItems() {
+    const items = String(state.settings.nav_menu || '').split('\n').map((line) => {
+      const at = line.indexOf('|');
+      const label = line.slice(0, at).trim();
+      const url = line.slice(at + 1).trim();
+      return at > 0 && label && /^(\/|https?:\/\/)/.test(url) ? { label, url } : null;
+    }).filter(Boolean);
+    if (!items.length) {
+      items.push({ label: 'Home', url: '/' }, ...topCategories().map((c) => ({ label: c.name, url: `/shop?category=${c.slug}` })), { label: 'Bulk Order', url: '/bulk-order' });
+    }
+    return items.map((item) => {
+      const slug = /^\/shop\?category=([\w-]+)$/.exec(item.url)?.[1];
+      return { ...item, category: slug && state.categories.find((c) => c.slug === slug) };
+    });
+  }
+
+  function isActive(item) {
+    const here = new URLSearchParams(location.search);
+    if (item.category) return here.get('category') && categoryPath(here.get('category'))[0]?.id === item.category.id;
+    return item.url === location.pathname + location.search;
+  }
+
   function navMenu() {
-    const here = new URLSearchParams(location.search).get('category');
-    const activeTop = here ? categoryPath(here)[0]?.id : null;
     const link = (c, cls = '') => `<a class="${cls}" href="/shop?category=${esc(c.slug)}">${esc(c.name)}</a>`;
-    const tops = topCategories().map((top) => {
-      const kids = childrenOf(top.id);
-      return `<div class="nav-item${activeTop === top.id ? ' active' : ''}">
-        <a href="/shop?category=${esc(top.slug)}" ${kids.length ? 'aria-haspopup="true"' : ''}>${esc(top.name)}${kids.length ? ' ▾' : ''}</a>
+    return menuItems().map((item) => {
+      const top = item.category;
+      const kids = top ? childrenOf(top.id) : [];
+      return `<div class="nav-item${isActive(item) ? ' active' : ''}">
+        <a href="${esc(item.url)}" ${kids.length ? 'aria-haspopup="true"' : ''}>${esc(item.label)}${kids.length ? ' ▾' : ''}</a>
         ${kids.length ? `<div class="dropdown">${link(top, 'all')}${kids.map((k) => {
           const grand = childrenOf(k.id);
           return grand.length ? `<div class="sub">${link(k, 'sub-head')}${grand.map((g) => link(g, 'sub-item')).join('')}</div>` : link(k);
         }).join('')}</div>` : ''}
       </div>`;
     }).join('');
-    return `<div class="nav-item${location.pathname === '/' ? ' active' : ''}"><a href="/">Home</a></div>${tops}
-      <div class="nav-item${location.pathname === '/bulk-order' ? ' active' : ''}"><a href="/bulk-order">Bulk Order</a></div>`;
   }
 
   function mobileMenu() {
     const item = (c, depth) => `<a href="/shop?category=${esc(c.slug)}" style="padding-left:${depth * 16}px">${esc(c.name)}</a>`
       + childrenOf(c.id).map((k) => item(k, depth + 1)).join('');
-    return `<a href="/">Home</a>
-      ${topCategories().map((top) => `<h4>${esc(top.name)}</h4>${item(top, 0).replace(`>${esc(top.name)}</a>`, `>All ${esc(top.name)}</a>`)}`).join('')}
-      <h4>More</h4><a href="/bulk-order">Bulk Order</a>`;
+    return menuItems().map((m) => (m.category && childrenOf(m.category.id).length
+      ? `<h4>${esc(m.label)}</h4><a href="${esc(m.url)}">All ${esc(m.label)}</a>${childrenOf(m.category.id).map((k) => item(k, 1)).join('')}`
+      : `<a href="${esc(m.url)}">${esc(m.label)}</a>`)).join('')
+      + '<h4>More</h4><a href="/bulk-order">Bulk Order</a>';
   }
 
   function renderHeader() {
@@ -385,7 +406,7 @@
       <div>${logoHtml(s)}<p class="muted" style="max-width:300px">${esc(s.tagline)}</p>
         <div class="socials">${s.instagram ? `<a href="${esc(s.instagram)}" aria-label="Instagram" target="_blank" rel="noopener">${ICON.ig}</a>` : ''}${s.facebook ? `<a href="${esc(s.facebook)}" aria-label="Facebook" target="_blank" rel="noopener">${ICON.fb}</a>` : ''}${s.youtube ? `<a href="${esc(s.youtube)}" aria-label="YouTube" target="_blank" rel="noopener">${ICON.yt}</a>` : ''}</div></div>
       <div><h4>Shop</h4>${topCategories().map((c) => `<a href="/shop?category=${esc(c.slug)}">${esc(c.name)}</a>`).join('')}<a href="/shop">All products</a><a href="/bulk-order">Bulk & corporate orders</a></div>
-      <div><h4>Help</h4><a href="/track">Track your order</a><a href="/help#faq">FAQs</a><a href="/pages/shipping-policy">Shipping policy</a><a href="/pages/refund-policy">Refunds & exchange</a><a href="/pages/contact">Contact us</a></div>
+      <div><h4>Help</h4><a href="/pages/about">About us</a><a href="/track">Track your order</a><a href="/help#faq">FAQs</a><a href="/pages/shipping-policy">Shipping policy</a><a href="/pages/refund-policy">Refunds & exchange</a><a href="/pages/contact">Contact us</a></div>
       <div><h4>Get in touch</h4><a href="tel:${esc((s.phone || '').replace(/\s/g, ''))}">${esc(s.phone)}</a><a href="mailto:${esc(s.email)}">${esc(s.email)}</a><p class="muted" style="margin:4px 0 0">${esc(s.address)}</p>${s.gstin ? `<p class="muted" style="margin:8px 0 0;font-size:13px">${esc(s.business_name || s.store_name)}<br>GSTIN: ${esc(s.gstin)}</p>` : ''}</div>
     </div><div class="bottom"><span>© ${new Date().getFullYear()} ${esc(s.store_name)}. All rights reserved.</span><span><a href="/pages/privacy-policy" style="display:inline">Privacy</a> · <a href="/pages/terms" style="display:inline">Terms</a> · <a href="/pages/refund-policy" style="display:inline">Refunds</a></span></div></div>`;
     if (s.whatsapp) {

@@ -7,6 +7,11 @@
   const hero = home.banners.length ? `<section class="hero" aria-label="Featured">
     <div class="hero-track">${home.banners.map((b, i) => {
       const fig = (src, label, cls) => (src ? `<figure class="${cls}"><img src="${esc(src)}" alt="${esc(label || b.title)}" ${i ? 'loading="lazy"' : ''}>${label ? `<figcaption>${esc(label)}</figcaption>` : ''}</figure>` : '');
+      // A picture banner: the words are part of the image, so the whole slide is the link.
+      if (b.theme === 'image') {
+        const img = `<img src="${esc(b.image)}" alt="${esc(b.title)}" width="1600" height="800" ${i ? 'loading="lazy"' : 'fetchpriority="high"'}>`;
+        return b.link ? `<a class="hero-slide theme-image" href="${esc(b.link)}">${img}</a>` : `<div class="hero-slide theme-image">${img}</div>`;
+      }
       return `<div class="hero-slide theme-${esc(b.theme || 'light')}">
         <div class="hero-copy">${b.kicker ? `<div class="kicker">${esc(b.kicker)}</div>` : ''}<h1>${esc(b.title)}</h1>${b.subtitle ? `<p>${esc(b.subtitle)}</p>` : ''}
           ${b.link ? `<a class="btn ${b.theme === 'karnataka' ? '' : 'btn-brand'}" href="${esc(b.link)}">${esc(b.button_text || 'Shop now')}</a>` : ''}</div>
@@ -16,10 +21,12 @@
     ${home.banners.length > 1 ? `<div class="hero-dots">${home.banners.map((_, i) => `<button aria-label="Slide ${i + 1}" data-slide="${i}"></button>`).join('')}</div>` : ''}
   </section>` : '';
 
-  // Tiles show the categories directly under each menu heading (Hoodies, Caps, Bottles…), each once.
-  function tileCategories(st) {
+  // Tiles: the categories under each top-level one (T-Shirts, Hoodies…), or the top-level one itself when it
+  // has none (Caps, Tote Bags…), each once and only when it has products.
+  function tileCategories() {
     const seen = new Set();
-    return Store.topCategories().flatMap((t) => Store.childrenOf(t.id)).filter((c) => c.product_count && !seen.has(c.id) && seen.add(c.id));
+    return Store.topCategories().flatMap((t) => (Store.childrenOf(t.id).length ? Store.childrenOf(t.id) : [t]))
+      .filter((c) => c.product_count && !seen.has(c.id) && seen.add(c.id));
   }
 
   const section = (kicker, title, sub, body, link) => `<section class="block"><div class="wrap">
@@ -33,7 +40,7 @@
       <div>${ICON.shield}<p style="margin:0"><b>Secure checkout</b><span>Your data stays safe</span></p></div>
     </div></section>
     ${home.trending.length ? section('ಟ್ರೆಂಡಿಂಗ್', 'Trending now', 'Loved by Kannadigas, from Bengaluru to Boston', `<div class="rail">${home.trending.map(productCard).join('')}</div>`, '<a class="btn btn-outline btn-sm" href="/shop">View all</a>') : ''}
-    ${section('ಏನೇನ್ ಸಿಗುತ್ತೆ..?', 'Shop by category', '', `<div class="cats">${tileCategories(state).map((c) => `<a class="cat" href="/shop?category=${esc(c.slug)}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ''}<span>${esc(c.name)}</span></a>`).join('')}</div>`)}
+    ${section('ಏನೇನ್ ಸಿಗುತ್ತೆ..?', 'Shop by category', '', `<div class="cats">${tileCategories().map((c) => `<a class="cat" href="/shop?category=${esc(c.slug)}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ''}<span>${esc(c.name)}</span></a>`).join('')}</div>`)}
     ${state.collections.length ? section('Collections', 'Find your vibe', 'Designs rooted in Karnataka, made for today', `<div class="collections">${state.collections.map((c) => `<a class="coll" href="/shop?collection=${esc(c.slug)}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ''}<div><h3>${esc(c.name)}</h3><p>${esc(c.description || '')}</p></div></a>`).join('')}</div>`) : ''}
     <section class="block"><div class="wrap"><div class="story">
       <img src="/assets/brand/icon-512.png" alt="">

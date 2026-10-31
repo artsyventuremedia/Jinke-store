@@ -483,6 +483,7 @@ async function settingsForAdmin() {
 router.get('/settings', async (_req, res) => res.json({ settings: await settingsForAdmin() }));
 router.put('/settings', async (req, res) => {
   const body = { ...(req.body || {}) };
+  delete body.content_version; // managed by the store itself
   if (body.gstin !== undefined) {
     body.gstin = String(body.gstin).trim().toUpperCase();
     if (body.gstin && !GSTIN_RE.test(body.gstin)) throw new HttpError(400, 'That GSTIN doesn’t look right — it should be 15 characters, e.g. 29ABCDE1234F1Z5');
